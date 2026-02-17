@@ -51,6 +51,10 @@ jobs:
       - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
       
+      - name: Install GKE auth plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin --quiet
+      
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
       
@@ -147,21 +151,20 @@ jobs:
       - name: Generate Test Report
         if: always()
         run: |
-          cat > test-report.md << 'REPORT'
-          # Load Test Report - ${{ github.event.inputs.load_type }}
-          
-          **Test Date**: $(date '+%Y-%m-%d %H:%M:%S')
-          **Test Type**: ${{ github.event.inputs.load_type }}
-          **Concurrent Requests**: ${{ github.event.inputs.concurrent_requests }}
-          **Duration**: ${{ github.event.inputs.duration_seconds }} seconds
-          
-          ## Status
-          
-          - ✅ Test workflow executed
-          - Load test configuration parameters received
-          - Check artifacts for detailed results
-          
-          REPORT
+          {
+            echo "# Load Test Report - ${{ github.event.inputs.load_type }}"
+            echo ""
+            echo "**Test Date**: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "**Test Type**: ${{ github.event.inputs.load_type }}"
+            echo "**Concurrent Requests**: ${{ github.event.inputs.concurrent_requests }}"
+            echo "**Duration**: ${{ github.event.inputs.duration_seconds }} seconds"
+            echo ""
+            echo "## Status"
+            echo ""
+            echo "- ✅ Test workflow executed"
+            echo "- Load test configuration parameters received"
+            echo "- Check artifacts for detailed results"
+          } > test-report.md
           cat test-report.md
           
           ## Notes
