@@ -144,6 +144,10 @@ jobs:
       - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
       
+      - name: Install GKE auth plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+      
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
       
