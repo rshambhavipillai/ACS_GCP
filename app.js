@@ -9,8 +9,37 @@ const metrics = {
   totalResponseTime: 0,
   errorCount: 0,
   healthChecks: 0,
-  startTime: Date.now()
+  startTime: Date.now(),
+  instanceRequests: {}
 };
+
+// Get instance information
+function getInstanceInfo() {
+  const hostname = os.hostname();
+  const networkInterfaces = os.networkInterfaces();
+  let ipAddress = 'localhost';
+  
+  // Get the first non-loopback IPv4 address
+  for (const [name, addrs] of Object.entries(networkInterfaces)) {
+    for (const addr of addrs) {
+      if (addr.family === 'IPv4' && !addr.internal) {
+        ipAddress = addr.address;
+        break;
+      }
+    }
+    if (ipAddress !== 'localhost') break;
+  }
+  
+  return {
+    hostname,
+    ipAddress,
+    instanceId: `${hostname}-${ipAddress}`,
+    podName: process.env.POD_NAME || hostname,
+    namespace: process.env.POD_NAMESPACE || 'default'
+  };
+}
+
+const instanceInfo = getInstanceInfo();
 
 // Request tracking middleware
 app.use((req, res, next) => {
@@ -22,6 +51,13 @@ app.use((req, res, next) => {
     if (res.statusCode >= 400) {
       metrics.errorCount++;
     }
+    
+    // Track which instance handled the request
+    const instanceId = instanceInfo.instanceId;
+    if (!metrics.instanceRequests[instanceId]) {
+      metrics.instanceRequests[instanceId] = 0;
+    }
+    metrics.instanceRequests[instanceId]++;
   });
   
   next();
@@ -116,10 +152,31 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Instance info endpoint
+app.get('/api/instance', (req, res) => {
+  res.json({
+    instance: instanceInfo,
+    metrics: {
+      requestsHandled: metrics.requestCount,
+      errorsHandled: metrics.errorCount,
+      avgResponseTime: metrics.requestCount > 0 
+        ? (metrics.totalResponseTime / metrics.requestCount).toFixed(2) 
+        : 0
+    },
+    deployment: {
+      platform: appInfo.platform,
+      environment: appInfo.environment,
+      type: appInfo.deployment
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // App info endpoint
 app.get('/api/info', (req, res) => {
   res.json({
     ...appInfo,
+    instance: instanceInfo,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage(),
@@ -175,6 +232,7 @@ app.get('/api/metrics', (req, res) => {
   const cpus = os.cpus();
   
   res.json({
+    instance: instanceInfo,
     memory: {
       rss: mem.rss,
       heapUsed: mem.heapUsed,
@@ -195,7 +253,9 @@ app.get('/api/metrics', (req, res) => {
     node: {
       version: process.version,
       uptime: process.uptime()
-    }
+    },
+    loadDistribution: metrics.instanceRequests,
+    totalRequests: metrics.requestCount
   });
 });
 

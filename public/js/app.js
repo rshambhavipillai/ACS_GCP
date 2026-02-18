@@ -94,8 +94,23 @@ async function fetchMetrics() {
     if (data.uptime) {
       updateUptime(data.uptime);
     }
+    
+    // Update load distribution
+    if (data.loadDistribution) {
+      displayLoadDistribution(data.loadDistribution, data.totalRequests);
+    }
   } catch (error) {
     console.error('Error fetching metrics:', error);
+  }
+}
+
+async function fetchInstanceInfo() {
+  try {
+    const response = await fetch('/api/instance');
+    const data = await response.json();
+    displayInstanceInfo(data);
+  } catch (error) {
+    console.error('Error fetching instance info:', error);
   }
 }
 
@@ -162,6 +177,85 @@ function updateUptime(seconds) {
   document.getElementById('process-uptime').textContent = formatTime(seconds);
 }
 
+function displayInstanceInfo(data) {
+  const instancesList = document.getElementById('instances-list');
+  if (!instancesList) return;
+
+  const instance = data.instance;
+  const metrics = data.metrics;
+
+  const instanceCard = document.createElement('div');
+  instanceCard.className = 'instance-card';
+  
+  const details = document.createElement('div');
+  details.className = 'instance-details';
+  
+  details.innerHTML = `
+    <div class="instance-hostname">🖥️ ${instance.hostname}</div>
+    <div class="instance-ip">IP: ${instance.ipAddress}</div>
+    <div class="instance-ip">Pod: ${instance.podName}</div>
+    <div class="instance-stats">
+      <div>Requests: ${metrics.requestsHandled}</div>
+      <div>Errors: ${metrics.errorsHandled}</div>
+      <div>Avg Response: ${metrics.avgResponseTime}ms</div>
+    </div>
+  `;
+  
+  const badge = document.createElement('div');
+  badge.className = 'instance-badge active';
+  badge.textContent = 'ACTIVE';
+  
+  instanceCard.appendChild(details);
+  instanceCard.appendChild(badge);
+  
+  instancesList.innerHTML = '';
+  instancesList.appendChild(instanceCard);
+}
+
+function displayLoadDistribution(distribution, totalRequests) {
+  const loadChart = document.getElementById('load-chart');
+  if (!loadChart) return;
+
+  if (Object.keys(distribution).length === 0) {
+    loadChart.innerHTML = '<p class="loading">No requests yet</p>';
+    return;
+  }
+
+  loadChart.innerHTML = '';
+  
+  Object.entries(distribution).forEach(([instanceId, requestCount]) => {
+    const percentage = totalRequests > 0 ? (requestCount / totalRequests) * 100 : 0;
+    
+    const barItem = document.createElement('div');
+    barItem.className = 'load-bar-item';
+    
+    const label = document.createElement('div');
+    label.className = 'load-bar-label';
+    label.textContent = instanceId.substring(0, 20) + (instanceId.length > 20 ? '...' : '');
+    label.title = instanceId;
+    
+    const barContainer = document.createElement('div');
+    barContainer.className = 'load-bar-container';
+    
+    const barFill = document.createElement('div');
+    barFill.className = 'load-bar-fill';
+    barFill.style.width = percentage + '%';
+    barFill.textContent = requestCount > 0 ? `${requestCount}` : '';
+    
+    barContainer.appendChild(barFill);
+    
+    const percentText = document.createElement('div');
+    percentText.className = 'load-bar-percent';
+    percentText.textContent = percentage.toFixed(1) + '%';
+    
+    barItem.appendChild(label);
+    barItem.appendChild(barContainer);
+    barItem.appendChild(percentText);
+    
+    loadChart.appendChild(barItem);
+  });
+}
+
 // ===========================
 // Modal Functions
 // ===========================
@@ -207,9 +301,12 @@ function initialize() {
   fetchAppInfo();
   fetchComparison();
   fetchHealth();
+  fetchInstanceInfo();
 
   // Auto-refresh metrics every 5 seconds
   setInterval(fetchMetrics, 5000);
+  // Auto-refresh instance info every 5 seconds
+  setInterval(fetchInstanceInfo, 5000);
   // Auto-refresh health every 10 seconds
   setInterval(fetchHealth, 10000);
 

@@ -97,6 +97,25 @@
             </div>
         </section>
 
+        <!-- Instance Tracking Section -->
+        <section id="instances" class="section">
+            <h2 class="section-title">Instance Load Distribution</h2>
+            <div class="instances-container">
+                <div class="instance-info-box">
+                    <h3>Connected Instances</h3>
+                    <div id="instances-list" class="instances-list">
+                        <p class="loading">Loading instance data...</p>
+                    </div>
+                </div>
+                <div class="load-distribution-box">
+                    <h3>Load Distribution</h3>
+                    <div id="load-chart" class="load-chart">
+                        <p class="loading">Loading metrics...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Metrics Section -->
         <section id="metrics" class="section">
             <h2 class="section-title">System Metrics</h2>
@@ -147,6 +166,12 @@
                     <code>/health</code>
                     <p>Application health status</p>
                     <button class="btn btn-small" onclick="callEndpoint('/health')">Test</button>
+                </div>
+                <div class="endpoint-card">
+                    <h3>Instance Info</h3>
+                    <code>/api/instance</code>
+                    <p>Current instance details and IP</p>
+                    <button class="btn btn-small" onclick="callEndpoint('/api/instance')">Test</button>
                 </div>
                 <div class="endpoint-card">
                     <h3>Application Info</h3>
