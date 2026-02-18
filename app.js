@@ -1,6 +1,31 @@
 const express = require('express');
+const path = require('path');
 const os = require('os');
 const app = express();
+
+// Simple metrics collection
+const metrics = {
+  requestCount: 0,
+  totalResponseTime: 0,
+  errorCount: 0,
+  healthChecks: 0,
+  startTime: Date.now()
+};
+
+// Request tracking middleware
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  
+  res.on('finish', () => {
+    metrics.requestCount++;
+    metrics.totalResponseTime += Date.now() - startTime;
+    if (res.statusCode >= 400) {
+      metrics.errorCount++;
+    }
+  });
+  
+  next();
+});
 
 // Middleware
 app.use(express.json());
@@ -19,6 +44,7 @@ const appInfo = {
 
 // Health check
 app.get('/health', (req, res) => {
+  metrics.healthChecks++;
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -26,59 +52,68 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Root endpoint
+// Prometheus metrics endpoint
+app.get('/metrics', (req, res) => {
+  const uptime = (Date.now() - metrics.startTime) / 1000;
+  const avgResponseTime = metrics.requestCount > 0 
+    ? metrics.totalResponseTime / metrics.requestCount 
+    : 0;
+  const memory = process.memoryUsage();
+  const cpus = os.cpus().length;
+
+  // Generate Prometheus format metrics
+  const prometheusMetrics = `# HELP app_info Application information
+# TYPE app_info gauge
+app_info{platform="${appInfo.platform}",deployment="${appInfo.deployment}"} 1
+
+# HELP app_requests_total Total requests
+# TYPE app_requests_total counter
+app_requests_total ${metrics.requestCount}
+
+# HELP app_errors_total Total errors
+# TYPE app_errors_total counter
+app_errors_total ${metrics.errorCount}
+
+# HELP app_response_time_ms Average response time
+# TYPE app_response_time_ms gauge
+app_response_time_ms ${avgResponseTime.toFixed(2)}
+
+# HELP app_uptime_seconds Application uptime
+# TYPE app_uptime_seconds gauge
+app_uptime_seconds ${uptime.toFixed(2)}
+
+# HELP process_uptime_seconds Process uptime
+# TYPE process_uptime_seconds gauge
+process_uptime_seconds ${process.uptime()}
+
+# HELP memory_heap_used_bytes Heap memory used
+# TYPE memory_heap_used_bytes gauge
+memory_heap_used_bytes ${memory.heapUsed}
+
+# HELP memory_heap_total_bytes Heap memory total
+# TYPE memory_heap_total_bytes gauge
+memory_heap_total_bytes ${memory.heapTotal}
+
+# HELP memory_rss_bytes RSS memory
+# TYPE memory_rss_bytes gauge
+memory_rss_bytes ${memory.rss}
+
+# HELP cpu_cores Available CPU cores
+# TYPE cpu_cores gauge
+cpu_cores ${cpus}
+
+# HELP health_checks_total Total health checks
+# TYPE health_checks_total counter
+health_checks_total ${metrics.healthChecks}
+`;
+
+  res.set('Content-Type', 'text/plain');
+  res.send(prometheusMetrics);
+});
+
+// Root endpoint - serves the static index.html
 app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>GCP Compare Project</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
-        .container { max-width: 1000px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; }
-        h1 { color: #1f2937; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
-        .card { border: 1px solid #ddd; border-radius: 4px; padding: 15px; background-color: #f9fafb; }
-        .card h3 { margin-top: 0; color: #1f2937; }
-        .links { margin-top: 20px; }
-        a { color: #2563eb; text-decoration: none; display: inline-block; margin-right: 15px; }
-        a:hover { text-decoration: underline; }
-        code { background-color: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>🚀 GCP Compare Project</h1>
-        <p>Comparing Google Kubernetes Engine (GKE) vs Google App Engine (GAE)</p>
-        
-        <div class="info-grid">
-          <div class="card">
-            <h3>📦 App Information</h3>
-            <p><strong>Platform:</strong> ${appInfo.platform}</p>
-            <p><strong>Environment:</strong> ${appInfo.environment}</p>
-            <p><strong>Deployment:</strong> ${appInfo.deployment}</p>
-            <p><strong>Hostname:</strong> ${os.hostname()}</p>
-          </div>
-          
-          <div class="card">
-            <h3>🔗 Available Endpoints</h3>
-            <p><code>/health</code> - Health check</p>
-            <p><code>/api/info</code> - Application info</p>
-            <p><code>/api/comparison</code> - GKE vs GAE comparison</p>
-            <p><code>/api/metrics</code> - System metrics</p>
-          </div>
-        </div>
-        
-        <div class="links">
-          <a href="/health">Health Check</a>
-          <a href="/api/info">App Info</a>
-          <a href="/api/comparison">Comparison</a>
-          <a href="/api/metrics">Metrics</a>
-        </div>
-      </div>
-    </body>
-    </html>
-  `);
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // App info endpoint
@@ -97,24 +132,38 @@ app.get('/api/comparison', (req, res) => {
   res.json({
     comparison: {
       "Google App Engine": {
-        description: "Fully managed serverless platform",
-        best_for: ["Web applications", "APIs", "Mobile backends"],
-        scaling: "Automatic (managed)",
-        cost_model: "Pay-per-request + instance hours",
-        management: "Minimal (serverless)",
-        deployment: "gcloud app deploy",
-        latency: "Fast (optimized)",
-        compliance: ["HIPAA", "PCI-DSS", "SOC 2"]
+        "Fully Managed": true,
+        "Serverless": true,
+        "Auto-scaling": true,
+        "Custom Runtime": false,
+        "Container Support": true,
+        "Stateful Apps": false,
+        "Cost Effective": true,
+        "Low Operations": true,
+        "Multi-region": false,
+        "HIPAA Compliant": true,
+        "PCI-DSS Compliant": true,
+        "SOC 2 Compliant": true,
+        "Easy Deployment": true,
+        "Version Control": true,
+        "Traffic Splitting": true
       },
       "Google Kubernetes Engine": {
-        description: "Managed Kubernetes container orchestration",
-        best_for: ["Complex applications", "Microservices", "Custom configurations"],
-        scaling: "Flexible (manual/autoscaling)",
-        cost_model: "Pay-per-node + storage",
-        management: "More control required",
-        deployment: "kubectl apply",
-        latency: "Variable (depends on config)",
-        compliance: ["HIPAA", "PCI-DSS", "SOC 2"]
+        "Fully Managed": true,
+        "Serverless": false,
+        "Auto-scaling": true,
+        "Custom Runtime": true,
+        "Container Support": true,
+        "Stateful Apps": true,
+        "Cost Effective": false,
+        "Low Operations": false,
+        "Multi-region": true,
+        "HIPAA Compliant": true,
+        "PCI-DSS Compliant": true,
+        "SOC 2 Compliant": true,
+        "Easy Deployment": false,
+        "Version Control": true,
+        "Traffic Splitting": true
       }
     }
   });
@@ -127,23 +176,25 @@ app.get('/api/metrics', (req, res) => {
   
   res.json({
     memory: {
-      heapUsed: Math.round(mem.heapUsed / 1024 / 1024) + ' MB',
-      heapTotal: Math.round(mem.heapTotal / 1024 / 1024) + ' MB',
-      external: Math.round(mem.external / 1024 / 1024) + ' MB'
+      rss: mem.rss,
+      heapUsed: mem.heapUsed,
+      heapTotal: mem.heapTotal,
+      external: mem.external
     },
+    uptime: process.uptime(),
     cpu: {
       cores: cpus.length,
       model: cpus[0].model
     },
     system: {
-      uptime: os.uptime() + ' seconds',
+      uptime: os.uptime(),
       loadAverage: os.loadavg(),
       platform: os.platform(),
       arch: os.arch()
     },
     node: {
       version: process.version,
-      uptime: process.uptime() + ' seconds'
+      uptime: process.uptime()
     }
   });
 });

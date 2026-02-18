@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCP Compare - GKE vs GAE</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="logo">☁️</span>
+                <span class="brand-text">GCP Compare</span>
+            </div>
+            <div class="navbar-links">
+                <a href="#comparison" class="nav-link">Comparison</a>
+                <a href="#metrics" class="nav-link">Metrics</a>
+                <a href="#info" class="nav-link">Info</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="hero">
+        <div class="hero-content">
+            <h1>Google Cloud Platform Comparison</h1>
+            <p>Compare Google Kubernetes Engine (GKE) vs Google App Engine (GAE)</p>
+            <div class="system-status">
+                <span id="status" class="status-badge status-healthy">● Healthy</span>
+                <span id="uptime" class="status-info">Uptime: Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- App Info Section -->
+        <section id="info" class="section">
+            <h2 class="section-title">System Information</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-icon">📦</div>
+                    <h3>Platform</h3>
+                    <p id="platform" class="info-value">Loading...</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">🌍</div>
+                    <h3>Environment</h3>
+                    <p id="environment" class="info-value">Loading...</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">🚀</div>
+                    <h3>Deployment</h3>
+                    <p id="deployment" class="info-value">Loading...</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">💻</div>
+                    <h3>Hostname</h3>
+                    <p id="hostname" class="info-value">Loading...</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">⚙️</div>
+                    <h3>CPU Cores</h3>
+                    <p id="cpus" class="info-value">Loading...</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">🕐</div>
+                    <h3>Last Updated</h3>
+                    <p id="timestamp" class="info-value">Loading...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Section -->
+        <section id="comparison" class="section">
+            <h2 class="section-title">Feature Comparison</h2>
+            <div class="comparison-container">
+                <div class="comparison-header">
+                    <div class="comparison-title">Feature</div>
+                    <div class="comparison-item">
+                        <div class="platform-badge gke">
+                            <span class="badge-icon">⚔️</span>
+                            GKE
+                        </div>
+                    </div>
+                    <div class="comparison-item">
+                        <div class="platform-badge gae">
+                            <span class="badge-icon">⚡</span>
+                            GAE
+                        </div>
+                    </div>
+                </div>
+                <div id="comparison-rows" class="comparison-rows">
+                    <!-- Rows will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Metrics Section -->
+        <section id="metrics" class="section">
+            <h2 class="section-title">System Metrics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Memory Usage</h3>
+                    <div class="metric-content">
+                        <div id="memory-usage" class="metric-value">0 MB</div>
+                        <div id="memory-bar" class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <p class="metric-label"><span id="memory-percent">0</span>% of reserved</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <h3>Heap Usage</h3>
+                    <div class="metric-content">
+                        <div id="heap-used" class="metric-value">0 MB</div>
+                        <div id="heap-bar" class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <p class="metric-label"><span id="heap-percent">0</span>% of total heap</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <h3>External Memory</h3>
+                    <div class="metric-content">
+                        <div id="external-memory" class="metric-value">0 MB</div>
+                        <p class="metric-label">Memory outside V8</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <h3>Process Uptime</h3>
+                    <div class="metric-content">
+                        <div id="process-uptime" class="metric-value">0s</div>
+                        <p class="metric-label">Running since start</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- API Endpoints Section -->
+        <section id="endpoints" class="section">
+            <h2 class="section-title">API Endpoints</h2>
+            <div class="endpoint-grid">
+                <div class="endpoint-card">
+                    <h3>Health Check</h3>
+                    <code>/health</code>
+                    <p>Application health status</p>
+                    <button class="btn btn-small" onclick="callEndpoint('/health')">Test</button>
+                </div>
+                <div class="endpoint-card">
+                    <h3>Application Info</h3>
+                    <code>/api/info</code>
+                    <p>Detailed application information</p>
+                    <button class="btn btn-small" onclick="callEndpoint('/api/info')">Test</button>
+                </div>
+                <div class="endpoint-card">
+                    <h3>GKE vs GAE Comparison</h3>
+                    <code>/api/comparison</code>
+                    <p>Full feature comparison data</p>
+                    <button class="btn btn-small" onclick="callEndpoint('/api/comparison')">Test</button>
+                </div>
+                <div class="endpoint-card">
+                    <h3>System Metrics</h3>
+                    <code>/api/metrics</code>
+                    <p>Real-time system metrics</p>
+                    <button class="btn btn-small" onclick="callEndpoint('/api/metrics')">Test</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal for endpoint responses -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">API Response</h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <pre id="modal-body" class="code-block"></pre>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 GCP Compare Project. Comparing Cloud Platforms for Better Decision Making.</p>
+            <p><a href="https://cloud.google.com">Learn more about Google Cloud</a></p>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+</body>
+
+</html>

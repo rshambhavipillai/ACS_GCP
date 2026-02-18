@@ -9,7 +9,12 @@
     "test": "npm run test:syntax",
     "test:syntax": "node -c app.js && echo '✓ App syntax valid'",
     "gae:local": "PORT=8080 PLATFORM=GAE DEPLOYMENT_TYPE='Google App Engine' npm start",
-    "gke:local": "PORT=8080 PLATFORM=GKE DEPLOYMENT_TYPE='Google Kubernetes Engine' npm start"
+    "gke:local": "PORT=8081 PLATFORM=GKE DEPLOYMENT_TYPE='Google Kubernetes Engine' npm start",
+    "load-test:gae": "node load-test.js http://localhost:8080 --duration=30 --rps=100",
+    "load-test:gke": "node load-test.js http://localhost:8081 --duration=30 --rps=100",
+    "load-test:cloud": "node load-test.js https://acs-stuttgart-2026-semester.ey.r.appspot.com --duration=30 --rps=50",
+    "load-test:compare": "node load-test-comparison.js",
+    "load-test:custom": "node load-test.js"
   },
   "keywords": ["gcp", "gke", "gae", "comparison", "kubernetes"],
   "author": "",
